@@ -1,5 +1,6 @@
 // Global styles and font setup
 import './globals.css'; 
+import '../lib/fontawesome';
 import { Inter, Poppins } from 'next/font/google'; 
 
 // Font configurations
