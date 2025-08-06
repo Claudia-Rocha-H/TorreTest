@@ -48,7 +48,7 @@ export default function SkillAnalysisPanel({
       try {
         // Load compensation and distribution data in parallel
         const [compensationData, distributionData] = await Promise.all([
-          analyzeSkillCompensation(skillName, userProficiency || undefined).catch((err: Error) => {
+          analyzeSkillCompensation(skillName).catch((err: Error) => {
             console.warn('Compensation analysis failed:', err);
             return undefined;
           }),
