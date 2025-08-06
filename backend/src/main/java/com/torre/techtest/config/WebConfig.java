@@ -17,10 +17,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                     "http://localhost:3000",
                     "https://*.vercel.app",
-                    "https://torre-tech-test-frontend.vercel.app"
+                    "https://torre-tech-test-frontend.vercel.app",
+                    "*"
                 ) 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowCredentials(false);
     }
 }

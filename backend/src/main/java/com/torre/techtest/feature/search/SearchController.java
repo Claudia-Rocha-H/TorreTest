@@ -11,18 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * REST Controller for Torre.ai search operations.
  * 
- * This controller acts as a proxy between the Next.js frontend and Torre.ai's search API,
- * providing a clean interface for people search functionality with pagination support.
- * 
- * Key Features:
- * - Proxies requests to Torre.ai _searchStream endpoint
- * - Supports configurable result limits for pagination
- * - Handles CORS for frontend integration
- * - Provides comprehensive error handling
+ * This controller acts as a proxy between the Next.js frontend and Torre.ai's search API
  */
 @RestController
 @RequestMapping("/api/search")
-@CrossOrigin(origins = "http://localhost:3000") // Enable CORS for Next.js frontend
+@CrossOrigin(origins = "*") 
 public class SearchController {
 
     private final SearchService searchService;
@@ -55,7 +48,6 @@ public class SearchController {
             return ResponseEntity.badRequest().body("Search query cannot be empty.");
         }
 
-        // Extract optional pagination parameters with sensible defaults
         Integer limit = requestPayload.get("limit") != null ? 
             Integer.valueOf(requestPayload.get("limit").toString()) : 100;
 
