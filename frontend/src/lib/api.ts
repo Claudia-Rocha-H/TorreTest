@@ -7,7 +7,6 @@
  */
 
 import type {
-  PersonResult,
   SearchResponse,
   PersonDetailsResponse,
   SkillCompensationResponse,
@@ -90,8 +89,7 @@ export const getPersonDetails = async (username: string): Promise<PersonDetailsR
  * @returns A promise that resolves to SkillCompensationResponse.
  */
 export const analyzeSkillCompensation = async (
-  skill: string, 
-  userProficiency?: string
+  skill: string
 ): Promise<SkillCompensationResponse> => {
   try {
     const response = await fetch(`${BASE_URL}/analyze/skill-compensation?skill=${encodeURIComponent(skill)}`, {

@@ -223,7 +223,7 @@ export default function SkillAnalysisPanel({
                       * Based on Torre.ai data from {analysisData.compensation.dataPoints?.toLocaleString()} profiles
                     </p>
                     <p className="text-gray-400 text-xs">
-                      <strong>Suggested:</strong> Torre.ai's recommended compensation based on market analysis and experience level.
+                      <strong>Suggested:</strong> Torre.ai&apos;s recommended compensation based on market analysis and experience level.
                       <br />
                       <strong>Average:</strong> Mathematical average of all reported compensations for this skill.
                     </p>
