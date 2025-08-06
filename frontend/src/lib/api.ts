@@ -15,7 +15,7 @@ import type {
 } from '../types';
 
 /** Base URL for our Spring Boot backend API */
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /**
  * Searches for people by name through our backend proxy.
