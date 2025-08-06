@@ -47,7 +47,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalResults, page
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center justify-center w-8 h-8 rounded text-light-text hover:text-white-text hover:bg-dark-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-8 h-8 rounded text-light-text hover:text-white hover:bg-dark-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FontAwesomeIcon icon={faChevronLeft} size="sm" />
         </button>
@@ -59,7 +59,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalResults, page
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="flex items-center justify-center w-8 h-8 rounded text-light-text hover:text-white-text hover:bg-dark-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-8 h-8 rounded text-light-text hover:text-white hover:bg-dark-bg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FontAwesomeIcon icon={faChevronRight} size="sm" />
         </button>

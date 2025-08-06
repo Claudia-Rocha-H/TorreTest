@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
-import { PersonResult } from '../../lib/api';
+import { PersonResult } from '../../types';
 
 interface SearchResultListProps {
   results: PersonResult[];

@@ -33,7 +33,6 @@ public class SearchService {
      */
     public SearchResponse searchPeople(SearchRequest request) throws Exception {
         List<PersonResult> personResults = new ArrayList<>();
-        System.out.println("DEBUG: Sending search request to Torre API with query: " + request.getQuery());
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(TORRE_SEARCH_API_URL);

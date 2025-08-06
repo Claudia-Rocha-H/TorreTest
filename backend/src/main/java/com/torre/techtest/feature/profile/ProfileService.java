@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.torre.techtest.utils.HtmlUtils;
 
 /**
- * Service for Torre.ai profile API with HTML entity decoding
+ * Service for retrieving person profiles from Torre.ai API.
  */
 @Service
 public class ProfileService {
@@ -36,16 +36,18 @@ public class ProfileService {
     }
 
     /**
-     * Retrieves Torre.ai profile with HTML entity decoding
+     * Retrieves profile details for a Torre.ai user.
+     * 
+     * @param username Torre.ai username/publicId
+     * @return PersonDetailsResponse with profile information
+     * @throws Exception if API call fails or response parsing fails
      */
     public PersonDetailsResponse getPersonDetails(String username) throws Exception {
         logger.info("Fetching profile details for username: {}", username);
         
-        // Construct Torre.ai profile endpoint URL
         String profileUrl = TORRE_API_BASE_URL + username;
         HttpGet httpGet = new HttpGet(profileUrl);
         
-        // Set required Torre.ai API headers (based on browser requests)
         httpGet.setHeader("Content-Type", CONTENT_TYPE);
         httpGet.setHeader("User-Agent", USER_AGENT);
         httpGet.setHeader("Accept", ACCEPT);
@@ -60,7 +62,6 @@ public class ProfileService {
             
             logger.debug("Torre.ai profile API response status: {}", statusCode);
             
-            // Handle non-successful responses
             if (statusCode != 200) {
                 String errorMessage = String.format(
                     "Torre.ai profile API returned status %d for username '%s': %s", 
@@ -72,6 +73,7 @@ public class ProfileService {
             
             try {
                 PersonDetailsResponse profileDetails = objectMapper.readValue(responseBody, PersonDetailsResponse.class);
+                
                 decodeHtmlEntitiesInProfile(profileDetails);
                 
                 logger.info("Successfully retrieved profile for username: {}", username);
@@ -97,19 +99,15 @@ public class ProfileService {
     }
     
     /**
-     * Decodes HTML entities in all text fields of a PersonDetailsResponse.
+     * Decodes HTML entities in profile text fields.
      * 
-     * Torre.ai API sometimes returns text with HTML entities (like &#x27; for apostrophes)
-     * that need to be decoded for proper display in the frontend.
-     * 
-     * @param profileDetails The profile response to process
+     * @param profileDetails Profile response to process
      */
     private void decodeHtmlEntitiesInProfile(PersonDetailsResponse profileDetails) {
         if (profileDetails == null) {
             return;
         }
         
-        // Decode entities in person basic information
         if (profileDetails.getPerson() != null) {
             PersonDetailsResponse.Person person = profileDetails.getPerson();
             person.setName(HtmlUtils.safeDecodeHtmlEntities(person.getName()));

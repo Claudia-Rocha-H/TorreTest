@@ -6,210 +6,16 @@
  * error handling, and type safety for search operations.
  */
 
+import type {
+  PersonResult,
+  SearchResponse,
+  PersonDetailsResponse,
+  SkillCompensationResponse,
+  SkillDistributionResponse
+} from '../types';
+
 /** Base URL for our Spring Boot backend API */
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080/api';
-
-/**
- * Represents a person result from Torre.ai search.
- * Maps the essential fields needed for displaying search results in the UI.
- */
-export interface PersonResult {
-  /** Unique identifier (Torre.ai ggId) */
-  id: string;
-  
-  /** Person's full name */
-  name: string;
-  
-  /** Professional headline or job title */
-  professionalHeadline: string | null;
-  
-  /** Profile image URL */
-  picture: string | null;
-  
-  /** Torre.ai username for profile routing */
-  username: string;
-}
-
-/**
- * Detailed person profile information from Torre.ai genome/bios endpoint.
- * Contains comprehensive profile data for individual person pages.
- */
-export interface PersonDetailsResponse {
-  /** Basic person information */
-  person: PersonDetails;
-  
-  /** List of professional strengths and skills */
-  strengths: Skill[];
-  
-  /** Professional experience history */
-  experiences: Experience[];
-  
-  /** Educational background */
-  education: Education[];
-}
-
-/**
- * Location information with geographic details.
- */
-export interface Location {
-  /** Full location name */
-  name: string;
-  
-  /** Short location name */
-  shortName: string | null;
-  
-  /** Country name */
-  country: string | null;
-  
-  /** ISO country code */
-  countryCode: string | null;
-  
-  /** Geographic latitude */
-  latitude: number | null;
-  
-  /** Geographic longitude */
-  longitude: number | null;
-  
-  /** Timezone identifier */
-  timezone: string | null;
-  
-  /** Google Places ID */
-  placeId: string | null;
-}
-
-/**
- * Core person profile information.
- */
-export interface PersonDetails {
-  /** Torre.ai unique identifier */
-  id: string;
-  
-  /** Full name */
-  name: string;
-  
-  /** Professional headline */
-  professionalHeadline: string | null;
-  
-  /** Profile picture URL */
-  picture: string | null;
-  
-  /** Professional bio summary */
-  summaryOfBio: string | null;
-  
-  /** Public username for routing */
-  publicId: string;
-  
-  /** Location information */
-  location: Location | null;
-}
-
-/**
- * Professional skill or strength with proficiency information.
- */
-export interface Skill {
-  /** Skill identifier */
-  id: string;
-  
-  /** Skill name */
-  name: string;
-  
-  /** Experience level */
-  experience: string | null;
-  
-  /** Proficiency rating */
-  proficiency: string | null;
-  
-  /** Skill importance weight */
-  weight: number | null;
-}
-
-/**
- * Professional experience entry.
- */
-export interface Experience {
-  /** Experience identifier */
-  id: string;
-  
-  /** Job title or role */
-  name: string;
-  
-  /** Associated organizations */
-  organizations: Organization[];
-  
-  /** Start date components */
-  fromMonth: string | null;
-  fromYear: string | null;
-  
-  /** End date components */
-  toMonth: string | null;
-  toYear: string | null;
-}
-
-/**
- * Organization information for experiences and education.
- */
-export interface Organization {
-  /** Organization identifier */
-  id: string;
-  
-  /** Organization name */
-  name: string;
-  
-  /** Organization logo URL */
-  picture: string | null;
-}
-
-/**
- * Educational background entry.
- */
-export interface Education {
-  /** Education identifier */
-  id: string;
-  
-  /** Degree or program name */
-  name: string;
-  
-  /** Educational institutions */
-  organizations: Organization[];
-  
-  /** Start date components */
-  fromMonth: string | null;
-  fromYear: string | null;
-  
-  /** End date components */
-  toMonth: string | null;
-  toYear: string | null;
-}
-
-/**
- * Pagination metadata for managing large result sets.
- * Provides all information needed for displaying pagination controls and result counts.
- */
-export interface PaginationInfo {
-  /** Total number of pages available */
-  total: number;
-  
-  /** Current page being displayed (1-based) */
-  currentPage: number;
-  
-  /** Number of items per page */
-  pageSize: number;
-  
-  /** Total number of results found */
-  totalResults: number;
-}
-
-/**
- * Complete search response structure.
- * Combines search results with pagination information for comprehensive UI support.
- */
-export interface SearchResponse {
-  /** Array of person results from the search */
-  results: PersonResult[];
-  
-  /** Pagination metadata for result navigation */
-  pagination: PaginationInfo;
-}
 
 /**
  * Searches for people by name through our backend proxy.
@@ -273,6 +79,62 @@ export const getPersonDetails = async (username: string): Promise<PersonDetailsR
     return response.json();
   } catch (error) {
     console.error('Error fetching person details:', error);
+    throw error;
+  }
+};
+
+/**
+ * Analyzes skill compensation using Torre.ai data.
+ * @param skill The skill to analyze (e.g., "javascript", "python").
+ * @param userProficiency Optional user proficiency level.
+ * @returns A promise that resolves to SkillCompensationResponse.
+ */
+export const analyzeSkillCompensation = async (
+  skill: string, 
+  userProficiency?: string
+): Promise<SkillCompensationResponse> => {
+  try {
+    const response = await fetch(`${BASE_URL}/analyze/skill-compensation?skill=${encodeURIComponent(skill)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to analyze skill compensation: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error analyzing skill compensation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets skill proficiency distribution using Torre.ai data.
+ * @param skill The skill to analyze (e.g., "javascript", "python").
+ * @returns A promise that resolves to SkillDistributionResponse.
+ */
+export const getSkillProficiencyDistribution = async (
+  skill: string
+): Promise<SkillDistributionResponse> => {
+  try {
+    const response = await fetch(`${BASE_URL}/analyze/skill-distribution?skill=${encodeURIComponent(skill)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get skill distribution: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error getting skill proficiency distribution:', error);
     throw error;
   }
 };

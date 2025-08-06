@@ -6,7 +6,8 @@ import SearchHeader from '../features/search/SearchHeader';
 import SearchInput from '../features/search/SearchInput';
 import SearchResultList from '../features/search/SearchResultList';
 import Pagination from '../components/Pagination';
-import { searchPeople, PersonResult, PaginationInfo } from '../lib/api';
+import type { PersonResult, PaginationInfo, SearchResponse } from '../types';
+import { searchPeople } from '../lib/api';
 import { useRouter } from 'next/navigation';
 
 /**

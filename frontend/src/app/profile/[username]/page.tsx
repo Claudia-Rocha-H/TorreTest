@@ -12,7 +12,9 @@ import {
   faStar
 } from '@fortawesome/free-solid-svg-icons';
 import GlobalHeader from '../../../components/GlobalHeader';
-import { getPersonDetails, PersonDetailsResponse } from '../../../lib/api';
+import SkillAnalysisPanel from '../../../components/SkillAnalysisPanel';
+import type { PersonDetailsResponse, Experience, Education, Organization } from '../../../types';
+import { getPersonDetails } from '../../../lib/api';
 
 /**
  * Dynamic profile page component for Torre.ai user profiles.
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [showAllSkills, setShowAllSkills] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
 
   /**
    * Load profile data on component mount or username change
@@ -85,7 +88,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getSkillColorCompact = (proficiency: string | null) => {
+  const getSkillColorCompact = (proficiency: string | null | undefined) => {
     switch (proficiency?.toLowerCase()) {
       case 'expert':
       case 'master':
@@ -101,7 +104,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getSkillLevel = (proficiency: string | null) => {
+  const getSkillLevel = (proficiency: string | null | undefined) => {
     switch (proficiency?.toLowerCase()) {
       case 'expert':
       case 'master':
@@ -119,7 +122,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getSkillStarCount = (proficiency: string | null) => {
+  const getSkillStarCount = (proficiency: string | null | undefined) => {
     switch (proficiency?.toLowerCase()) {
       case 'expert':
       case 'master':
@@ -150,6 +153,29 @@ export default function ProfilePage() {
     });
 
   return showAllSkills ? sorted : sorted.slice(0, 20);
+  };
+
+  /**
+   * Handle skill click to show analysis panel
+   */
+  const handleSkillClick = (skillName: string) => {
+    setSelectedSkill(skillName);
+  };
+
+  /**
+   * Handle closing the skill analysis panel
+   */
+  const handleCloseSkillAnalysis = () => {
+    setSelectedSkill(null);
+  };
+
+  /**
+   * Get user proficiency for selected skill
+   */
+  const getSelectedSkillProficiency = (): string | null => {
+    if (!selectedSkill || !profileData?.strengths) return null;
+    const skill = profileData.strengths.find(s => s.name === selectedSkill);
+    return skill?.proficiency || null;
   };
 
   if (loading) {
@@ -271,10 +297,11 @@ export default function ProfilePage() {
             
             <div className="flex flex-wrap gap-2 mb-4">
               {getSortedSkills().map((skill, index) => (
-                <span
+                <button
                   key={skill.id || index}
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSkillColorCompact(skill.proficiency)} transition-all hover:scale-105`}
-                  title={`${skill.name}${skill.proficiency ? ` - ${skill.proficiency}` : ''}`}
+                  onClick={() => handleSkillClick(skill.name)}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSkillColorCompact(skill.proficiency)} transition-all hover:scale-105 cursor-pointer hover:shadow-lg`}
+                  title={`Click to analyze ${skill.name}${skill.proficiency ? ` - ${skill.proficiency}` : ''}`}
                 >
                   {skill.name}
                   {skill.proficiency && (
@@ -282,7 +309,7 @@ export default function ProfilePage() {
                       {getSkillLevel(skill.proficiency)}
                     </span>
                   )}
-                </span>
+                </button>
               ))}
             </div>
 
@@ -309,13 +336,13 @@ export default function ProfilePage() {
             </h2>
             
             <div className="space-y-4">
-              {experiences.map((exp, index) => (
+              {experiences.map((exp: Experience, index: number) => (
                 <div key={exp.id || index} className="border-l-2 border-primary/30 pl-4 pb-4">
                   <h3 className="text-lg font-semibold text-primary mb-1">{exp.name}</h3>
                   
                   {exp.organizations && exp.organizations.length > 0 && (
                     <div className="text-primary font-medium mb-1 text-sm">
-                      {exp.organizations.map(org => org.name).join(', ')}
+                      {exp.organizations.map((org: Organization) => org.name).join(', ')}
                     </div>
                   )}
                   
@@ -336,13 +363,13 @@ export default function ProfilePage() {
             </h2>
             
             <div className="space-y-4">
-              {education.map((edu, index) => (
+              {education.map((edu: Education, index: number) => (
                 <div key={edu.id || index} className="border-l-2 border-primary/30 pl-4 pb-4">
                   <h3 className="text-lg font-semibold text-primary mb-1">{edu.name}</h3>
                   
                   {edu.organizations && edu.organizations.length > 0 && (
                     <div className="text-primary font-medium mb-1 text-sm">
-                      {edu.organizations.map(org => org.name).join(', ')}
+                      {edu.organizations.map((org: Organization) => org.name).join(', ')}
                     </div>
                   )}
                   
@@ -355,6 +382,16 @@ export default function ProfilePage() {
           </div>
         )}
       </main>
+
+      {/* Skill Analysis Panel */}
+      {selectedSkill && (
+        <SkillAnalysisPanel
+          skillName={selectedSkill}
+          userProficiency={getSelectedSkillProficiency()}
+          onClose={handleCloseSkillAnalysis}
+          isVisible={true}
+        />
+      )}
     </div>
   );
 }
