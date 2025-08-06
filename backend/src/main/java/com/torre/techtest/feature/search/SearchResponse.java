@@ -52,7 +52,10 @@ public class SearchResponse {
         private String professionalHeadline;
         
         /** Profile image URL (imageUrl from Torre.ai) */
-        private String picture; 
+        private String picture;
+        
+        /** Torre.ai username for profile routing (usually same as id) */
+        private String username;
     }
     
     /**

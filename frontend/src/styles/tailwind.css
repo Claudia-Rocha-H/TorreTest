@@ -11,6 +11,8 @@
   --color-input-placeholder: #888;
   --color-badge: #ff6b6b;
   --color-white-text: #ffffff;
+  --color-white: #ffffff;
+  --color-gray-500: #6b7280;
   
   --font-family-sans: Poppins, ui-sans-serif, system-ui, sans-serif;
   
@@ -28,12 +30,17 @@
   --font-size-1.2: 1.2rem;
 }
 
-/* Hexagonal avatar styles */
+/* Hexagon Avatar Styles */
 .hexagon-avatar {
   width: 64px;
   height: 64px;
   position: relative;
   display: inline-block;
+}
+
+.hexagon-avatar.hexagon-profile {
+  width: 120px;
+  height: 120px;
 }
 
 .hexagon-avatar::before {
@@ -68,25 +75,27 @@
   justify-content: center;
 }
 
-/* Glowing border effect for cards */
+/* Glow Card Styles */
 .glow-card {
   position: relative;
   background: #2f3136;
   border-radius: 12px;
   overflow: hidden;
-  /* Efecto de iluminación 3D con sombras */
+  width: 100%;
+  height: auto;
+  min-height: 120px;
   box-shadow: 
-    -1px -1px 2px rgba(255, 255, 255, 0.1),  /* Sombra clara arriba-izquierda */
-    2px 2px 4px rgba(0, 0, 0, 0.4),          /* Sombra oscura abajo-derecha */
-    inset -1px -1px 1px rgba(255, 255, 255, 0.05), /* Luz interna arriba-izquierda */
-    inset 1px 1px 1px rgba(0, 0, 0, 0.3);    /* Sombra interna abajo-derecha */
-  transition: box-shadow 0.2s ease;
+    -1px -1px 2px rgba(255, 255, 255, 0.1),  
+    2px 2px 4px rgba(0, 0, 0, 0.4),          
+    inset -1px -1px 1px rgba(255, 255, 255, 0.05), 
+    inset 1px 1px 1px rgba(0, 0, 0, 0.3);   
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .glow-card:hover {
   box-shadow: 
-    -2px -2px 4px rgba(255, 255, 255, 0.15),  /* Sombra clara más intensa en hover */
-    3px 3px 6px rgba(0, 0, 0, 0.5),          /* Sombra oscura más intensa */
+    -2px -2px 4px rgba(255, 255, 255, 0.15),  
+    3px 3px 6px rgba(0, 0, 0, 0.5),         
     inset -1px -1px 1px rgba(255, 255, 255, 0.08), 
     inset 1px 1px 1px rgba(0, 0, 0, 0.4);
 }
@@ -97,76 +106,16 @@
   background: transparent;
   border-radius: 11px;
   padding: 16px;
-}
-
-/* Hexagonal avatar styles */
-.hexagon-avatar {
-  width: 64px;
-  height: 64px;
-  position: relative;
-  display: inline-block;
-}
-
-.hexagon-avatar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, #cddc39, #a4b82f);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  padding: 2px;
-  z-index: 1;
-}
-
-.hexagon-avatar img,
-.hexagon-avatar .avatar-fallback {
-  position: relative;
-  width: calc(100% - 4px);
-  height: calc(100% - 4px);
-  top: 2px;
-  left: 2px;
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  object-fit: cover;
-  z-index: 2;
-}
-
-.hexagon-avatar .avatar-fallback {
-  background: #2f3136;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
-/* Glowing border effect for cards */
-.glow-card {
-  position: relative;
-  background: #2f3136;
-  border-radius: 12px;
+/* Text truncation utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.glow-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 1px;
-  background: linear-gradient(45deg, #cddc39, transparent, #cddc39);
-  border-radius: inherit;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask-composite: xor;
-  z-index: 0;
-}
-
-.glow-card-content {
-  position: relative;
-  z-index: 1;
-  background: #2f3136;
-  border-radius: 11px;
-  padding: 16px;
 }

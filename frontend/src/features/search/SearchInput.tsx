@@ -45,6 +45,8 @@ const SearchInput: React.FC<SearchInputProps> = ({ onSearch }) => {
           type="text"
           placeholder="Search people or organizations by name"
           {...register('query')}
+          autoComplete="off"
+          spellCheck={false}
           className={`w-full py-4 pl-12 pr-4 bg-input-bg border rounded-full text-light-text text-base outline-none transition-colors duration-300 placeholder:text-input-placeholder
             ${errors.query ? 'border-badge focus:border-badge' : 'border-border focus:border-primary'}
           `}

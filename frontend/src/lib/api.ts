@@ -25,6 +25,160 @@ export interface PersonResult {
   
   /** Profile image URL */
   picture: string | null;
+  
+  /** Torre.ai username for profile routing */
+  username: string;
+}
+
+/**
+ * Detailed person profile information from Torre.ai genome/bios endpoint.
+ * Contains comprehensive profile data for individual person pages.
+ */
+export interface PersonDetailsResponse {
+  /** Basic person information */
+  person: PersonDetails;
+  
+  /** List of professional strengths and skills */
+  strengths: Skill[];
+  
+  /** Professional experience history */
+  experiences: Experience[];
+  
+  /** Educational background */
+  education: Education[];
+}
+
+/**
+ * Location information with geographic details.
+ */
+export interface Location {
+  /** Full location name */
+  name: string;
+  
+  /** Short location name */
+  shortName: string | null;
+  
+  /** Country name */
+  country: string | null;
+  
+  /** ISO country code */
+  countryCode: string | null;
+  
+  /** Geographic latitude */
+  latitude: number | null;
+  
+  /** Geographic longitude */
+  longitude: number | null;
+  
+  /** Timezone identifier */
+  timezone: string | null;
+  
+  /** Google Places ID */
+  placeId: string | null;
+}
+
+/**
+ * Core person profile information.
+ */
+export interface PersonDetails {
+  /** Torre.ai unique identifier */
+  id: string;
+  
+  /** Full name */
+  name: string;
+  
+  /** Professional headline */
+  professionalHeadline: string | null;
+  
+  /** Profile picture URL */
+  picture: string | null;
+  
+  /** Professional bio summary */
+  summaryOfBio: string | null;
+  
+  /** Public username for routing */
+  publicId: string;
+  
+  /** Location information */
+  location: Location | null;
+}
+
+/**
+ * Professional skill or strength with proficiency information.
+ */
+export interface Skill {
+  /** Skill identifier */
+  id: string;
+  
+  /** Skill name */
+  name: string;
+  
+  /** Experience level */
+  experience: string | null;
+  
+  /** Proficiency rating */
+  proficiency: string | null;
+  
+  /** Skill importance weight */
+  weight: number | null;
+}
+
+/**
+ * Professional experience entry.
+ */
+export interface Experience {
+  /** Experience identifier */
+  id: string;
+  
+  /** Job title or role */
+  name: string;
+  
+  /** Associated organizations */
+  organizations: Organization[];
+  
+  /** Start date components */
+  fromMonth: string | null;
+  fromYear: string | null;
+  
+  /** End date components */
+  toMonth: string | null;
+  toYear: string | null;
+}
+
+/**
+ * Organization information for experiences and education.
+ */
+export interface Organization {
+  /** Organization identifier */
+  id: string;
+  
+  /** Organization name */
+  name: string;
+  
+  /** Organization logo URL */
+  picture: string | null;
+}
+
+/**
+ * Educational background entry.
+ */
+export interface Education {
+  /** Education identifier */
+  id: string;
+  
+  /** Degree or program name */
+  name: string;
+  
+  /** Educational institutions */
+  organizations: Organization[];
+  
+  /** Start date components */
+  fromMonth: string | null;
+  fromYear: string | null;
+  
+  /** End date components */
+  toMonth: string | null;
+  toYear: string | null;
 }
 
 /**
@@ -86,6 +240,39 @@ export const searchPeople = async (query: string, limit: number = 100): Promise<
     return response.json();
   } catch (error) {
     console.error('Error searching people:', error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieves detailed profile information for a specific Torre.ai user.
+ * 
+ * Fetches comprehensive profile data including personal details, professional skills,
+ * work experience, and educational background through our backend proxy.
+ * 
+ * @param username Torre.ai username/publicId to retrieve profile for
+ * @returns Promise resolving to PersonDetailsResponse with complete profile information
+ * @throws Error if the request fails, user not found, or returns non-200 status
+ */
+export const getPersonDetails = async (username: string): Promise<PersonDetailsResponse> => {
+  try {
+    const response = await fetch(`${BASE_URL}/profile/${encodeURIComponent(username)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`Profile not found for username: ${username}`);
+      }
+      throw new Error(`Failed to fetch profile: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching person details:', error);
     throw error;
   }
 };

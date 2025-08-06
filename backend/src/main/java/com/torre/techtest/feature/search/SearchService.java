@@ -17,45 +17,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.torre.techtest.feature.search.SearchResponse.PersonResult;
+import com.torre.techtest.utils.HtmlUtils;
 
 /**
- * Service layer for Torre.ai search API integration.
- * 
- * This service acts as a proxy between our application and Torre.ai's _searchStream endpoint,
- * handling the complexities of:
- * - HTTP client configuration and connection management
- * - JSON streaming response parsing
- * - Error handling and logging
- * - Data transformation from Torre.ai format to our internal DTOs
- * 
- * The service processes Torre.ai's streaming JSON responses line by line to efficiently
- * handle large result sets while maintaining low memory usage.
+ * Service for Torre.ai search API integration with HTML entity decoding
  */
 @Service
 public class SearchService {
 
-    /** Torre.ai search endpoint URL */
     private static final String TORRE_SEARCH_API_URL = "https://torre.ai/api/entities/_searchStream";
-    
-    /** Jackson ObjectMapper for JSON processing */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * Searches for people through Torre.ai's streaming search API.
-     * 
-     * This method handles the complete flow of:
-     * 1. Preparing and sending HTTP request to Torre.ai with proper headers
-     * 2. Processing the streaming JSON response line by line
-     * 3. Parsing each JSON object and extracting person data
-     * 4. Transforming Torre.ai field names to our internal structure
-     * 5. Building and returning a comprehensive SearchResponse
-     * 
-     * Torre.ai returns streaming JSON where each line is a separate JSON object
-     * representing a person. We parse these incrementally to handle large result sets efficiently.
-     * 
-     * @param request SearchRequest containing query parameters and search configuration
-     * @return SearchResponse with list of PersonResult objects and pagination info
-     * @throws Exception if HTTP request fails, JSON parsing errors occur, or Torre.ai returns error status
+     * Searches Torre.ai streaming API for people with HTML entity decoding
      */
     public SearchResponse searchPeople(SearchRequest request) throws Exception {
         List<PersonResult> personResults = new ArrayList<>();
@@ -64,11 +38,9 @@ public class SearchService {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(TORRE_SEARCH_API_URL);
             
-            // Headers según la documentación de Torre.ai
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setHeader("User-Agent", "Mozilla/5.0 (compatible; TorreSearchBot/1.0)");
 
-            // Usar el objeto completo según SearchPeopleSchema
             String jsonPayload = objectMapper.writeValueAsString(request);
             httpPost.setEntity(new StringEntity(jsonPayload, ContentType.APPLICATION_JSON));
             System.out.println("DEBUG: Request payload to Torre: " + jsonPayload);
@@ -86,16 +58,28 @@ public class SearchService {
                                 System.out.println("DEBUG: Processing line " + lineNumber + ": " + line);
                                 try {
                                     JsonNode node = objectMapper.readTree(line);
-                                    // Torre.ai devuelve campos diferentes: ggId, name, professionalHeadline, imageUrl
+                                    System.out.println("DEBUG: Available fields in Torre.ai response: " + node.fieldNames());
+                                    node.fieldNames().forEachRemaining(fieldName -> 
+                                        System.out.println("DEBUG: Field '" + fieldName + "' = " + node.get(fieldName).asText())
+                                    );
+                                    
                                     if (node.has("ggId") && node.has("name")) {
+                                        String ggId = node.get("ggId").asText();
+                                        String username = node.has("username") ? node.get("username").asText() : ggId;
+                                        
+                                        String decodedName = HtmlUtils.safeDecodeHtmlEntities(node.get("name").asText());
+                                        String decodedHeadline = node.has("professionalHeadline") ? 
+                                            HtmlUtils.safeDecodeHtmlEntities(node.get("professionalHeadline").asText()) : null;
+                                        
                                         PersonResult person = new PersonResult(
-                                                node.get("ggId").asText(),
-                                                node.get("name").asText(),
-                                                node.has("professionalHeadline") ? node.get("professionalHeadline").asText() : null,
-                                                node.has("imageUrl") ? node.get("imageUrl").asText() : null
+                                                ggId,
+                                                decodedName,
+                                                decodedHeadline,
+                                                node.has("imageUrl") ? node.get("imageUrl").asText() : null,
+                                                username
                                         );
                                         personResults.add(person);
-                                        System.out.println("DEBUG: Added person: " + person.getName() + " (ID: " + person.getId() + ")");
+                                        System.out.println("DEBUG: Added person: " + person.getName() + " (ID: " + person.getId() + ", Username: " + username + ")");
                                     } else {
                                         System.out.println("DEBUG: Line " + lineNumber + " is not a valid person result (missing 'ggId' or 'name' fields): " + line);
                                     }
