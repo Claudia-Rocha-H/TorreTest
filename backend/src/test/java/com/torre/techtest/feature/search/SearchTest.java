@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -55,5 +56,29 @@ class SearchTest {
         assertEquals(30, sent.getLimit());
         assertEquals("person", sent.getIdentityType());
         assertEquals(true, sent.getMeta());
+    }
+
+    @Test
+    void badRequestBlankQuery() {
+        SearchController controller = new SearchController(searchService);
+
+        ResponseEntity<?> response = controller.searchPeople(Map.of("query", "   ", "limit", "30"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Search query cannot be empty.", response.getBody());
+        verifyNoInteractions(searchService);
+    }
+
+    @Test
+    void serverErrorOnServiceFail() throws Exception {
+        SearchController controller = new SearchController(searchService);
+
+        when(searchService.searchPeople(org.mockito.ArgumentMatchers.any(SearchRequest.class)))
+            .thenThrow(new RuntimeException("upstream failure"));
+
+        ResponseEntity<?> response = controller.searchPeople(Map.of("query", "java", "limit", "30"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertInstanceOf(Map.class, response.getBody());
     }
 }
