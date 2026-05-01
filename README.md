@@ -50,3 +50,36 @@ A full-stack application that integrates with Torre.ai's API to provide advanced
 - **CORS Configuration**: Production-ready cross-origin resource sharing
 - **Error Handling**: Comprehensive exception management
 - **Health Checks**: Monitoring endpoints for deployment verification
+
+## SonarCloud
+
+This repository is ready to run SonarCloud analysis for the full monorepo:
+
+- `backend`: static analysis plus JaCoCo coverage from Maven tests
+- `frontend`: static analysis for the Next.js code in `frontend/src`
+
+### GitHub configuration
+
+Add these values in your GitHub repository before running the workflow:
+
+- Repository secret: `SONAR_TOKEN`
+- Repository variable: `SONAR_ORGANIZATION`
+- Repository variable: `SONAR_PROJECT_KEY`
+
+### Workflow
+
+The workflow lives in `.github/workflows/sonarcloud.yml` and runs on:
+
+- pushes to `main` or `master`
+- every pull request
+
+### Local backend coverage
+
+To generate the backend coverage report used by SonarCloud:
+
+```bash
+cd backend
+./mvnw verify
+```
+
+That produces the JaCoCo XML report at `backend/target/site/jacoco/jacoco.xml`.

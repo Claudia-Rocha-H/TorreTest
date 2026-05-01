@@ -1,20 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUser, 
-  faMapMarkerAlt, 
+import {
   faArrowLeft,
   faBriefcase,
   faGraduationCap,
-  faStar
+  faMapMarkerAlt,
+  faStar,
+  faUser,
 } from '@fortawesome/free-solid-svg-icons';
+import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import GlobalHeader from '../../../components/GlobalHeader';
 import SkillAnalysisPanel from '../../../components/SkillAnalysisPanel';
-import type { PersonDetailsResponse, Experience, Education, Organization } from '../../../types';
 import { getPersonDetails } from '../../../lib/api';
+import type {
+  Education,
+  Experience,
+  Organization,
+  PersonDetailsResponse,
+} from '../../../types';
 
 /**
  * Dynamic profile page component for Torre.ai user profiles.
@@ -24,7 +30,7 @@ export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
   const username = params.username as string;
-  
+
   const [profileData, setProfileData] = useState<PersonDetailsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +38,6 @@ export default function ProfilePage() {
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
 
-  /**
-   * Load profile data on component mount or username change
-   */
   useEffect(() => {
     const loadProfile = async () => {
       if (!username) {
@@ -57,35 +60,27 @@ export default function ProfilePage() {
       }
     };
 
-    loadProfile();
+    void loadProfile();
   }, [username]);
 
   const handleGoBack = () => {
     router.back();
   };
 
-  const formatDateRange = (fromMonth: string | null, fromYear: string | null, toMonth: string | null, toYear: string | null) => {
+  const formatDateRange = (
+    fromMonth: string | null,
+    fromYear: string | null,
+    toMonth: string | null,
+    toYear: string | null
+  ) => {
     const from = fromYear ? `${fromMonth || ''} ${fromYear}`.trim() : '';
     const to = toYear ? `${toMonth || ''} ${toYear}`.trim() : 'Present';
-    
-    if (!from) return to === 'Present' ? 'Present' : to;
-    return `${from} - ${to}`;
-  };
 
-  const getSkillColor = (proficiency: string | null) => {
-    switch (proficiency?.toLowerCase()) {
-      case 'expert':
-      case 'master':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'proficient':
-      case 'advanced':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'novice':
-      case 'beginner':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default:
-        return 'bg-primary/20 text-primary border-primary/30';
+    if (!from) {
+      return to;
     }
+
+    return `${from} - ${to}`;
   };
 
   const getSkillColorCompact = (proficiency: string | null | undefined) => {
@@ -108,15 +103,15 @@ export default function ProfilePage() {
     switch (proficiency?.toLowerCase()) {
       case 'expert':
       case 'master':
-        return '★★★';
+        return '***';
       case 'proficient':
       case 'advanced':
-        return '★★';
+        return '**';
       case 'novice':
       case 'beginner':
-        return '★';
+        return '*';
       case 'no-experience-interested':
-        return '☆';
+        return 'o';
       default:
         return '';
     }
@@ -140,41 +135,34 @@ export default function ProfilePage() {
     }
   };
 
-  /**
-   * Sort skills by proficiency level and apply pagination
-   */
   const getSortedSkills = () => {
-    if (!profileData?.strengths) return [];
-    
+    if (!profileData?.strengths) {
+      return [];
+    }
+
     const sorted = [...profileData.strengths].sort((a, b) => {
       const aStars = getSkillStarCount(a.proficiency);
       const bStars = getSkillStarCount(b.proficiency);
       return bStars - aStars;
     });
 
-  return showAllSkills ? sorted : sorted.slice(0, 20);
+    return showAllSkills ? sorted : sorted.slice(0, 20);
   };
 
-  /**
-   * Handle skill click to show analysis panel
-   */
   const handleSkillClick = (skillName: string) => {
     setSelectedSkill(skillName);
   };
 
-  /**
-   * Handle closing the skill analysis panel
-   */
   const handleCloseSkillAnalysis = () => {
     setSelectedSkill(null);
   };
 
-  /**
-   * Get user proficiency for selected skill
-   */
   const getSelectedSkillProficiency = (): string | null => {
-    if (!selectedSkill || !profileData?.strengths) return null;
-    const skill = profileData.strengths.find(s => s.name === selectedSkill);
+    if (!selectedSkill || !profileData?.strengths) {
+      return null;
+    }
+
+    const skill = profileData.strengths.find((item) => item.name === selectedSkill);
     return skill?.proficiency || null;
   };
 
@@ -183,10 +171,10 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-dark-bg text-light-text">
         <GlobalHeader />
         <main className="px-16 py-10">
-          <div className="flex items-center justify-center h-96">
+          <div className="flex h-96 items-center justify-center">
             <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="mb-4 flex justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
               </div>
               <p>Loading profile...</p>
             </div>
@@ -202,15 +190,16 @@ export default function ProfilePage() {
         <GlobalHeader />
         <main className="px-16 py-10">
           <button
+            type="button"
             onClick={handleGoBack}
-            className="flex items-center text-primary hover:text-primary/80 mb-6 transition-colors"
+            className="mb-6 flex items-center text-primary transition-colors hover:text-primary/80"
           >
             <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
             Back to Search
           </button>
-          
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-400 mb-2">Profile Not Found</h2>
+
+          <div className="rounded-lg border border-red-500/30 bg-red-500/20 p-6 text-center">
+            <h2 className="mb-2 text-xl font-semibold text-red-400">Profile Not Found</h2>
             <p className="text-red-300">{error}</p>
           </div>
         </main>
@@ -232,21 +221,22 @@ export default function ProfilePage() {
   const { person, strengths, experiences, education } = profileData;
 
   return (
-    <div className="min-h-screen bg-dark-bg text-light-text font-sans">
+    <div className="min-h-screen bg-dark-bg font-sans text-light-text">
       <GlobalHeader />
-      
+
       <main className="px-16 py-10">
         <button
+          type="button"
           onClick={handleGoBack}
-          className="flex items-center text-primary hover:text-primary/80 mb-8 transition-colors"
+          className="mb-8 flex items-center text-primary transition-colors hover:text-primary/80"
         >
           <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
           Back to Search
         </button>
 
-        <div className="bg-dark-card rounded-lg p-8 mb-8">
+        <div className="mb-8 rounded-lg bg-dark-card p-8">
           <div className="flex items-center space-x-8">
-            <div className="flex-shrink-0 flex items-center">
+            <div className="flex flex-shrink-0 items-center">
               {imageError || !person.picture ? (
                 <div className="hexagon-avatar hexagon-profile">
                   <div className="avatar-fallback">
@@ -255,9 +245,13 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="hexagon-avatar hexagon-profile">
-                  <img
+                  <Image
                     src={person.picture}
                     alt={`${person.name}'s profile`}
+                    width={120}
+                    height={120}
+                    className="h-[116px] w-[116px]"
+                    unoptimized
                     onError={() => setImageError(true)}
                     onLoad={() => setImageError(false)}
                   />
@@ -266,21 +260,21 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white-text mb-2">{person.name}</h1>
-              
+              <h1 className="mb-2 text-3xl font-bold text-white-text">{person.name}</h1>
+
               {person.professionalHeadline && (
-                <p className="text-xl text-primary mb-4">{person.professionalHeadline}</p>
+                <p className="mb-4 text-xl text-primary">{person.professionalHeadline}</p>
               )}
-              
+
               {person.location && (
-                <div className="flex items-center text-light-text mb-4">
+                <div className="mb-4 flex items-center text-light-text">
                   <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-primary" />
                   <span>{person.location.name}</span>
                 </div>
               )}
-              
+
               {person.summaryOfBio && (
-                <div className="text-light-text leading-relaxed">
+                <div className="leading-relaxed text-light-text">
                   <p>{person.summaryOfBio}</p>
                 </div>
               )}
@@ -289,25 +283,24 @@ export default function ProfilePage() {
         </div>
 
         {strengths && strengths.length > 0 && (
-          <div className="bg-dark-card rounded-lg p-8 mb-8">
-            <h2 className="text-2xl font-semibold text-white-text mb-6 flex items-center">
+          <div className="mb-8 rounded-lg bg-dark-card p-8">
+            <h2 className="mb-6 flex items-center text-2xl font-semibold text-white-text">
               <FontAwesomeIcon icon={faStar} className="mr-3 text-primary" />
               Skills & Strengths ({strengths.length})
             </h2>
-            
-            <div className="flex flex-wrap gap-2 mb-4">
+
+            <div className="mb-4 flex flex-wrap gap-2">
               {getSortedSkills().map((skill, index) => (
                 <button
+                  type="button"
                   key={skill.id || index}
                   onClick={() => handleSkillClick(skill.name)}
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSkillColorCompact(skill.proficiency)} transition-all hover:scale-105 cursor-pointer hover:shadow-lg`}
+                  className={`inline-flex cursor-pointer items-center rounded-full px-3 py-1 text-sm font-medium transition-all hover:scale-105 hover:shadow-lg ${getSkillColorCompact(skill.proficiency)}`}
                   title={`Click to analyze ${skill.name}${skill.proficiency ? ` - ${skill.proficiency}` : ''}`}
                 >
                   {skill.name}
                   {skill.proficiency && (
-                    <span className="ml-1 text-xs opacity-75">
-                      {getSkillLevel(skill.proficiency)}
-                    </span>
+                    <span className="ml-1 text-xs opacity-75">{getSkillLevel(skill.proficiency)}</span>
                   )}
                 </button>
               ))}
@@ -315,38 +308,37 @@ export default function ProfilePage() {
 
             {strengths.length > 20 && (
               <button
+                type="button"
                 onClick={() => setShowAllSkills(!showAllSkills)}
-                className="text-primary hover:text-green-400 text-sm font-medium transition-colors flex items-center bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg border border-primary/30 hover:border-green-400/50"
+                className="flex items-center rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:border-green-400/50 hover:bg-primary/20 hover:text-green-400"
               >
-                {showAllSkills ? (
-                  <>Show less...</>
-                ) : (
-                  <>Show more... ({strengths.length - 20} additional skills)</>
-                )}
+                {showAllSkills
+                  ? 'Show less...'
+                  : `Show more... (${strengths.length - 20} additional skills)`}
               </button>
             )}
           </div>
         )}
 
         {experiences && experiences.length > 0 && (
-          <div className="bg-dark-card rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-white-text mb-4 flex items-center">
+          <div className="mb-6 rounded-lg bg-dark-card p-6">
+            <h2 className="mb-4 flex items-center text-xl font-semibold text-white-text">
               <FontAwesomeIcon icon={faBriefcase} className="mr-2 text-primary" />
               Professional Experience
             </h2>
-            
+
             <div className="space-y-4">
               {experiences.map((exp: Experience, index: number) => (
-                <div key={exp.id || index} className="border-l-2 border-primary/30 pl-4 pb-4">
-                  <h3 className="text-lg font-semibold text-primary mb-1">{exp.name}</h3>
-                  
+                <div key={exp.id || index} className="border-l-2 border-primary/30 pb-4 pl-4">
+                  <h3 className="mb-1 text-lg font-semibold text-primary">{exp.name}</h3>
+
                   {exp.organizations && exp.organizations.length > 0 && (
-                    <div className="text-primary font-medium mb-1 text-sm">
+                    <div className="mb-1 text-sm font-medium text-primary">
                       {exp.organizations.map((org: Organization) => org.name).join(', ')}
                     </div>
                   )}
-                  
-                  <div className="text-light-text text-xs">
+
+                  <div className="text-xs text-light-text">
                     {formatDateRange(exp.fromMonth, exp.fromYear, exp.toMonth, exp.toYear)}
                   </div>
                 </div>
@@ -356,24 +348,24 @@ export default function ProfilePage() {
         )}
 
         {education && education.length > 0 && (
-          <div className="bg-dark-card rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white-text mb-4 flex items-center">
+          <div className="rounded-lg bg-dark-card p-6">
+            <h2 className="mb-4 flex items-center text-xl font-semibold text-white-text">
               <FontAwesomeIcon icon={faGraduationCap} className="mr-2 text-primary" />
               Education
             </h2>
-            
+
             <div className="space-y-4">
               {education.map((edu: Education, index: number) => (
-                <div key={edu.id || index} className="border-l-2 border-primary/30 pl-4 pb-4">
-                  <h3 className="text-lg font-semibold text-primary mb-1">{edu.name}</h3>
-                  
+                <div key={edu.id || index} className="border-l-2 border-primary/30 pb-4 pl-4">
+                  <h3 className="mb-1 text-lg font-semibold text-primary">{edu.name}</h3>
+
                   {edu.organizations && edu.organizations.length > 0 && (
-                    <div className="text-primary font-medium mb-1 text-sm">
+                    <div className="mb-1 text-sm font-medium text-primary">
                       {edu.organizations.map((org: Organization) => org.name).join(', ')}
                     </div>
                   )}
-                  
-                  <div className="text-light-text text-xs">
+
+                  <div className="text-xs text-light-text">
                     {formatDateRange(edu.fromMonth, edu.fromYear, edu.toMonth, edu.toYear)}
                   </div>
                 </div>
@@ -383,7 +375,6 @@ export default function ProfilePage() {
         )}
       </main>
 
-      {/* Skill Analysis Panel */}
       {selectedSkill && (
         <SkillAnalysisPanel
           skillName={selectedSkill}

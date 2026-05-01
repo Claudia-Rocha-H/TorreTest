@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /**
  * Types Index - Central export point for all types
  * Following screaming architecture - all types are accessible from this single entry point
@@ -51,5 +53,5 @@ export interface UIState {
 
 export interface ComponentProps {
   className?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }

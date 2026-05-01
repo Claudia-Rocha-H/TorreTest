@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import GlobalHeader from '../components/GlobalHeader';
 import SearchHeader from '../features/search/SearchHeader';
 import SearchInput from '../features/search/SearchInput';
 import SearchResultList from '../features/search/SearchResultList';
 import Pagination from '../components/Pagination';
-import type { PersonResult, PaginationInfo, SearchResponse } from '../types';
+import type { PersonResult, PaginationInfo } from '../types';
 import { searchPeople } from '../lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -17,7 +17,6 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<PersonResult[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentQuery, setCurrentQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -25,7 +24,6 @@ export default function Home() {
   const PAGE_SIZE = 21;
 
   const handleSearch = async (query: string) => {
-    setCurrentQuery(query);
     setCurrentPage(1);
     await performSearch(query, 1);
   };

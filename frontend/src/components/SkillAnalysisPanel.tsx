@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTimes, 
@@ -76,7 +76,7 @@ export default function SkillAnalysisPanel({
     };
 
     loadAnalysisData();
-  }, [isVisible, skillName, userProficiency]);
+  }, [isVisible, skillName]);
 
   /**
    * Format currency values for display

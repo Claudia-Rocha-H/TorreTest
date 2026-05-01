@@ -2,6 +2,7 @@
 import './globals.css'; 
 import '../lib/fontawesome';
 import { Inter, Poppins } from 'next/font/google'; 
+import type { ReactNode } from 'react';
 
 // Font configurations
 const inter = Inter({ 
@@ -21,7 +22,7 @@ const poppins = Poppins({
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html 

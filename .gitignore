@@ -1,0 +1,6 @@
+.scannerwork/
+.sonar/
+backend/.m2repo/
+backend/target/
+frontend/.next/
+frontend/node_modules/

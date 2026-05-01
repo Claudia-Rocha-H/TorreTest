@@ -1,6 +1,7 @@
 package com.torre.techtest.feature.profile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,10 @@ class ProfileControllerTest {
         ResponseEntity<PersonDetailsResponse> response = controller.getPersonProfile("ana-ruiz");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Ana Ruiz", response.getBody().getPerson().getName());
+        assertNotNull(response.getBody());
+        PersonDetailsResponse body = response.getBody();
+        assertNotNull(body.getPerson());
+        PersonDetailsResponse.Person person = body.getPerson();
+        assertEquals("Ana Ruiz", person.getName());
     }
 }

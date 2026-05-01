@@ -1,4 +1,3 @@
-import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
@@ -29,7 +28,7 @@ interface PaginationProps {
  * - Responsive design matching Torre.ai's dark theme
  * - FontAwesome icons for navigation
  */
-const Pagination: React.FC<PaginationProps> = ({ currentPage, totalResults, pageSize, onPageChange }) => {
+export default function Pagination({ currentPage, totalResults, pageSize, onPageChange }: PaginationProps) {
   const totalPages = Math.ceil(totalResults / pageSize);
   const startResult = (currentPage - 1) * pageSize + 1;
   const endResult = Math.min(currentPage * pageSize, totalResults);
@@ -66,6 +65,4 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalResults, page
       </div>
     </div>
   );
-};
-
-export default Pagination;
+}

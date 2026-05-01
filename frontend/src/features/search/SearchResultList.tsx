@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import Image from 'next/image';
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
-import { PersonResult } from '../../types';
+import type { PersonResult } from '../../types';
 
 interface SearchResultListProps {
   results: PersonResult[];
@@ -11,9 +12,9 @@ interface SearchResultListProps {
 /**
  * Search results grid with Torre.ai-inspired card design
  */
-const SearchResultList: React.FC<SearchResultListProps> = ({ results, onSelectPerson }) => {
+export default function SearchResultList({ results, onSelectPerson }: SearchResultListProps) {
   
-  const ProfileImage: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
+  const ProfileImage = ({ src, alt }: { src: string; alt: string }) => {
     const [imageError, setImageError] = useState(false);
 
     if (imageError || !src) {
@@ -32,9 +33,13 @@ const SearchResultList: React.FC<SearchResultListProps> = ({ results, onSelectPe
 
     return (
       <div className="hexagon-avatar">
-        <img
+        <Image
           src={src}
           alt={alt}
+          width={64}
+          height={64}
+          className="h-[60px] w-[60px]"
+          unoptimized
           onError={() => setImageError(true)}
           onLoad={() => setImageError(false)}
         />
@@ -53,9 +58,10 @@ const SearchResultList: React.FC<SearchResultListProps> = ({ results, onSelectPe
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
       {results.map((person) => (
-        <div
+        <button
+          type="button"
           key={person.id}
-          className="glow-card cursor-pointer hover:scale-105 transition-transform duration-200 w-full min-h-[120px]"
+          className="glow-card min-h-[120px] w-full cursor-pointer text-left transition-transform duration-200 hover:scale-105"
           onClick={() => onSelectPerson(person.username)}
         >
           <div className="glow-card-content flex items-center space-x-4 h-full">
@@ -63,7 +69,6 @@ const SearchResultList: React.FC<SearchResultListProps> = ({ results, onSelectPe
               <ProfileImage
                 src={person.picture || ''}
                 alt={person.name}
-                className=""
               />
             </div>
             
@@ -75,10 +80,8 @@ const SearchResultList: React.FC<SearchResultListProps> = ({ results, onSelectPe
               )}
             </div>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
-};
-
-export default SearchResultList;
+}

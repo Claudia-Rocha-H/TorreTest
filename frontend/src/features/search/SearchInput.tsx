@@ -1,4 +1,3 @@
-import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useForm } from 'react-hook-form';
@@ -21,7 +20,7 @@ interface SearchInputProps {
   onSearch: (query: string) => void;
 }
 
-const SearchInput: React.FC<SearchInputProps> = ({ onSearch }) => {
+export default function SearchInput({ onSearch }: SearchInputProps) {
   const {
     register,
     handleSubmit,
@@ -57,6 +56,4 @@ const SearchInput: React.FC<SearchInputProps> = ({ onSearch }) => {
       </div>
     </form>
   );
-};
-
-export default SearchInput;
+}
