@@ -23,13 +23,8 @@ public class AnalysisController {
      */
     @GetMapping("/skill-compensation")
     public ResponseEntity<SkillCompensationResponse> analyzeSkillCompensation(@RequestParam String skill) {
-        try {
-            SkillCompensationResponse response = analysisService.analyzeSkillCompensation(skill);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("Error analyzing skill compensation for " + skill + ": " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+        SkillCompensationResponse response = analysisService.analyzeSkillCompensation(skill);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -39,12 +34,7 @@ public class AnalysisController {
      */
     @GetMapping("/skill-distribution")
     public ResponseEntity<SkillDistributionResponse> getSkillProficiencyDistribution(@RequestParam String skill) {
-        try {
-            SkillDistributionResponse response = analysisService.getSkillProficiencyDistribution(skill);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("Error analyzing skill distribution for " + skill + ": " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+        SkillDistributionResponse response = analysisService.getSkillProficiencyDistribution(skill);
+        return ResponseEntity.ok(response);
     }
 }

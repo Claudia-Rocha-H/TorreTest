@@ -1,6 +1,5 @@
 package com.torre.techtest.feature.search;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,21 +53,15 @@ public class SearchController {
     public ResponseEntity<?> searchPeople(@RequestBody java.util.Map<String, Object> requestPayload) {
         String query = (String) requestPayload.get("query");
         if (query == null || query.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Search query cannot be empty.");
+            throw new IllegalArgumentException("Search query cannot be empty.");
         }
 
-        Integer limit = requestPayload.get("limit") != null ? 
+        Integer limit = requestPayload.get("limit") != null ?
             Integer.valueOf(requestPayload.get("limit").toString()) : 100;
 
-        try {
-            SearchRequest torreRequest = new SearchRequest(query, limit);
-            SearchResponse response = searchService.searchPeople(torreRequest);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("Error during people search: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(java.util.Collections.singletonMap("message", "Error searching people: " + e.getMessage()));
-        }
+        SearchRequest torreRequest = new SearchRequest(query, limit);
+        SearchResponse response = searchService.searchPeople(torreRequest);
+        return ResponseEntity.ok(response);
     }
 }
 

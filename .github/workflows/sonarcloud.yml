@@ -51,13 +51,7 @@ jobs:
       - name: Run frontend tests and generate coverage
         working-directory: frontend
         run: |
-          npm test -- --coverage --silent || true
-          # ensure lcov exists for Sonar (some setups place it under coverage/lcov.info)
-          if [ -f coverage/lcov.info ]; then
-            echo "Found frontend coverage at coverage/lcov.info"
-          else
-            echo "No frontend lcov found; sonar frontend coverage will be skipped"
-          fi
+          npm test -- --coverage --silent
 
       - name: Validate SonarCloud configuration
         env:

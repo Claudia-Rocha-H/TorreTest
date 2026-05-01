@@ -1,16 +1,21 @@
 package com.torre.techtest.feature.profile;
 
+import java.io.IOException;
+
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.torre.techtest.exception.ExternalServiceException;
+import com.torre.techtest.exception.ResourceNotFoundException;
 import com.torre.techtest.utils.HtmlUtils;
 
 /**
@@ -35,6 +40,10 @@ public class ProfileService {
         this.httpClient = HttpClients.createDefault();
     }
 
+    protected String getProfileBaseUrl() {
+        return TORRE_API_BASE_URL;
+    }
+
     /**
      * Retrieves profile details for a Torre.ai user.
      * 
@@ -42,10 +51,10 @@ public class ProfileService {
      * @return PersonDetailsResponse with profile information
      * @throws Exception if API call fails or response parsing fails
      */
-    public PersonDetailsResponse getPersonDetails(String username) throws Exception {
+    public PersonDetailsResponse getPersonDetails(String username) {
         logger.info("Fetching profile details for username: {}", username);
         
-        String profileUrl = TORRE_API_BASE_URL + username;
+        String profileUrl = getProfileBaseUrl() + username;
         HttpGet httpGet = new HttpGet(profileUrl);
         
         httpGet.setHeader("Content-Type", CONTENT_TYPE);
@@ -62,13 +71,18 @@ public class ProfileService {
             
             logger.debug("Torre.ai profile API response status: {}", statusCode);
             
-            if (statusCode != 200) {
-                String errorMessage = String.format(
-                    "Torre.ai profile API returned status %d for username '%s': %s", 
+            if (statusCode == 404) {
+                throw new ResourceNotFoundException(String.format(
+                    "Torre.ai profile API returned status %d for username '%s': %s",
                     statusCode, username, responseBody
-                );
-                logger.error(errorMessage);
-                throw new RuntimeException(errorMessage);
+                ));
+            }
+
+            if (statusCode != 200) {
+                throw new ExternalServiceException(String.format(
+                    "Torre.ai profile API returned status %d for username '%s': %s",
+                    statusCode, username, responseBody
+                ));
             }
             
             try {
@@ -79,22 +93,20 @@ public class ProfileService {
                 logger.info("Successfully retrieved profile for username: {}", username);
                 return profileDetails;
                 
-            } catch (Exception parseException) {
-                String errorMessage = String.format(
-                    "Failed to parse Torre.ai profile response for username '%s': %s", 
+            } catch (IOException parseException) {
+                throw new ExternalServiceException(String.format(
+                    "Failed to parse Torre.ai profile response for username '%s': %s",
                     username, parseException.getMessage()
-                );
-                logger.error(errorMessage, parseException);
-                throw new RuntimeException(errorMessage, parseException);
+                ), parseException);
             }
             
-        } catch (Exception httpException) {
-            String errorMessage = String.format(
-                "HTTP request failed for Torre.ai profile username '%s': %s", 
+        } catch (ResourceNotFoundException | ExternalServiceException exception) {
+            throw exception;
+        } catch (IOException | ParseException httpException) {
+            throw new ExternalServiceException(String.format(
+                "HTTP request failed for Torre.ai profile username '%s': %s",
                 username, httpException.getMessage()
-            );
-            logger.error(errorMessage, httpException);
-            throw new RuntimeException(errorMessage, httpException);
+            ), httpException);
         }
     }
     

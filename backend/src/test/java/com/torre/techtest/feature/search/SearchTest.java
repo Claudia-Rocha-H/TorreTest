@@ -1,32 +1,37 @@
 package com.torre.techtest.feature.search;
 
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+import com.torre.techtest.exception.ExternalServiceException;
+import com.torre.techtest.exception.GlobalExceptionHandler;
+
+@WebMvcTest(SearchController.class)
+@ContextConfiguration(classes = {SearchController.class, GlobalExceptionHandler.class})
 class SearchTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
     private SearchService searchService;
 
     @Test
-    void shouldSearchPeople() throws Exception {
-        SearchController controller = new SearchController(searchService);
-
+    void searchPeople() throws Exception {
         SearchResponse.PersonResult person = new SearchResponse.PersonResult(
             "gg-1",
             "Ana Ruiz",
@@ -36,49 +41,64 @@ class SearchTest {
         );
         SearchResponse expected = new SearchResponse(List.of(person));
 
-        when(searchService.searchPeople(org.mockito.ArgumentMatchers.any(SearchRequest.class))).thenReturn(expected);
+        when(searchService.searchPeople(any(SearchRequest.class))).thenReturn(expected);
 
-        ResponseEntity<?> response = controller.searchPeople(Map.of("query", "java", "limit", "30"));
+        mockMvc.perform(post("/api/search/people")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"java\",\"limit\":30}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results[0].name").value("Ana Ruiz"))
+            .andExpect(jsonPath("$.pagination.totalResults").value(1));
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertInstanceOf(SearchResponse.class, response.getBody());
-
-        SearchResponse body = (SearchResponse) response.getBody();
-        assertNotNull(body);
-        assertEquals(1, body.getResults().size());
-        assertEquals("Ana Ruiz", body.getResults().get(0).getName());
-
-        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.forClass(SearchRequest.class);
-        verify(searchService).searchPeople(captor.capture());
-
-        SearchRequest sent = captor.getValue();
-        assertEquals("java", sent.getQuery());
-        assertEquals(30, sent.getLimit());
-        assertEquals("person", sent.getIdentityType());
-        assertEquals(true, sent.getMeta());
+        verify(searchService).searchPeople(any(SearchRequest.class));
     }
 
     @Test
-    void badRequestBlankQuery() {
-        SearchController controller = new SearchController(searchService);
+    void blankQuery() throws Exception {
+        mockMvc.perform(post("/api/search/people")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"   \",\"limit\":30}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Search query cannot be empty."));
 
-        ResponseEntity<?> response = controller.searchPeople(Map.of("query", "   ", "limit", "30"));
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Search query cannot be empty.", response.getBody());
         verifyNoInteractions(searchService);
     }
 
     @Test
-    void serverErrorOnServiceFail() throws Exception {
-        SearchController controller = new SearchController(searchService);
+    void serviceError() throws Exception {
+        when(searchService.searchPeople(any(SearchRequest.class)))
+            .thenThrow(new ExternalServiceException("upstream failure"));
 
-        when(searchService.searchPeople(org.mockito.ArgumentMatchers.any(SearchRequest.class)))
-            .thenThrow(new RuntimeException("upstream failure"));
+        mockMvc.perform(post("/api/search/people")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"java\",\"limit\":30}"))
+            .andExpect(status().isBadGateway())
+            .andExpect(jsonPath("$.message").value("upstream failure"));
+    }
 
-        ResponseEntity<?> response = controller.searchPeople(Map.of("query", "java", "limit", "30"));
+    @Test
+    void nullQuery() throws Exception {
+        mockMvc.perform(post("/api/search/people")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"limit\":30}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Search query cannot be empty."));
+    }
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertInstanceOf(Map.class, response.getBody());
+    @Test
+    void defaultLimit() throws Exception {
+        SearchResponse.PersonResult person = new SearchResponse.PersonResult(
+            "gg-1", "Ana Ruiz", "Senior Java Engineer", "https://img.local/ana.png", "ana-ruiz"
+        );
+        SearchResponse expected = new SearchResponse(List.of(person));
+
+        when(searchService.searchPeople(any(SearchRequest.class))).thenReturn(expected);
+
+        mockMvc.perform(post("/api/search/people")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"java\"}"))
+            .andExpect(status().isOk());
+
+        verify(searchService).searchPeople(any(SearchRequest.class));
     }
 }

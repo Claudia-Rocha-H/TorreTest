@@ -11,11 +11,14 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.torre.techtest.exception.ExternalServiceException;
 import com.torre.techtest.feature.search.SearchResponse.PersonResult;
 import com.torre.techtest.utils.HtmlUtils;
 
@@ -25,27 +28,32 @@ import com.torre.techtest.utils.HtmlUtils;
 @Service
 public class SearchService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
     private static final String TORRE_SEARCH_API_URL = "https://torre.ai/api/entities/_searchStream";
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    protected String getSearchApiUrl() {
+        return TORRE_SEARCH_API_URL;
+    }
 
     /**
      * Searches Torre.ai streaming API for people with HTML entity decoding
      */
-    public SearchResponse searchPeople(SearchRequest request) throws Exception {
+    public SearchResponse searchPeople(SearchRequest request) {
         List<PersonResult> personResults = new ArrayList<>();
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost httpPost = new HttpPost(TORRE_SEARCH_API_URL);
-            
+            HttpPost httpPost = new HttpPost(getSearchApiUrl());
+
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setHeader("User-Agent", "Mozilla/5.0 (compatible; TorreSearchBot/1.0)");
 
             String jsonPayload = objectMapper.writeValueAsString(request);
             httpPost.setEntity(new StringEntity(jsonPayload, ContentType.APPLICATION_JSON));
-            System.out.println("DEBUG: Request payload to Torre: " + jsonPayload);
+            logger.debug("Request payload to Torre: {}", jsonPayload);
 
             httpClient.execute(httpPost, response -> {
-                System.out.println("DEBUG: Received response status from Torre: " + response.getCode() + " " + response.getReasonPhrase());
+                logger.debug("Received response status from Torre: {} {}", response.getCode(), response.getReasonPhrase());
 
                 if (response.getCode() == 200) {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))) {
@@ -54,13 +62,10 @@ public class SearchService {
                         while ((line = reader.readLine()) != null) {
                             lineNumber++;
                             if (!line.trim().isEmpty()) {
-                                System.out.println("DEBUG: Processing line " + lineNumber + ": " + line);
+                                logger.debug("Processing line {}: {}", lineNumber, line);
                                 try {
                                     JsonNode node = objectMapper.readTree(line);
-                                    System.out.println("DEBUG: Available fields in Torre.ai response: " + node.fieldNames());
-                                    node.fieldNames().forEachRemaining(fieldName -> 
-                                        System.out.println("DEBUG: Field '" + fieldName + "' = " + node.get(fieldName).asText())
-                                    );
+                                    logger.debug("Parsed Torre.ai response node at line {}", lineNumber);
                                     
                                     if (node.has("ggId") && node.has("name")) {
                                         String ggId = node.get("ggId").asText();
@@ -78,18 +83,18 @@ public class SearchService {
                                                 username
                                         );
                                         personResults.add(person);
-                                        System.out.println("DEBUG: Added person: " + person.getName() + " (ID: " + person.getId() + ", Username: " + username + ")");
+                                        logger.debug("Added person: {} (ID: {}, Username: {})", person.getName(), person.getId(), username);
                                     } else {
-                                        System.out.println("DEBUG: Line " + lineNumber + " is not a valid person result (missing 'ggId' or 'name' fields): " + line);
+                                        logger.debug("Line {} is not a valid person result", lineNumber);
                                     }
                                 } catch (JsonProcessingException e) {
-                                    System.err.println("ERROR: Error parsing JSON line " + lineNumber + ": " + line + " - " + e.getMessage());
+                                    logger.warn("Error parsing JSON line {}: {}", lineNumber, e.getMessage());
                                 }
                             } else {
-                                System.out.println("DEBUG: Skipped empty line " + lineNumber);
+                                logger.debug("Skipped empty line {}", lineNumber);
                             }
                         }
-                        System.out.println("DEBUG: Finished processing stream. Total persons found: " + personResults.size());
+                        logger.debug("Finished processing stream. Total persons found: {}", personResults.size());
                     }
                 } else {
                     String responseBody = "";
@@ -98,14 +103,12 @@ public class SearchService {
                             responseBody = errorReader.lines().collect(Collectors.joining("\n"));
                         }
                     }
-                    System.err.println("ERROR: Torre API returned non-200 status: " + response.getCode() + " - " + response.getReasonPhrase() + " - Body: " + responseBody);
-                    throw new RuntimeException("Torre API returned error: " + response.getCode() + " - " + response.getReasonPhrase() + " - " + responseBody);
+                    throw new ExternalServiceException("Torre API returned error: " + response.getCode() + " - " + response.getReasonPhrase() + " - " + responseBody);
                 }
                 return null;
             });
         } catch (Exception e) {
-            System.err.println("ERROR: Exception during HTTP client execution: " + e.getMessage());
-            throw e;
+            throw new ExternalServiceException("Exception during people search: " + e.getMessage(), e);
         }
 
         return new SearchResponse(personResults);

@@ -1,5 +1,6 @@
 package com.torre.techtest.feature.search;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,8 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.torre.techtest.exception.ExternalServiceException;
 
 /**
  * Service for Torre.ai analysis API integration.
@@ -31,6 +34,22 @@ public class AnalysisService {
     private static final String TORRE_SEARCH_API_URL = "https://search.torre.co/people/_search";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    protected String getAnalyzeApiUrl() {
+        return TORRE_ANALYZE_API_URL;
+    }
+
+    protected String getSearchApiUrl() {
+        return TORRE_SEARCH_API_URL;
+    }
+
+    protected void pause(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     /**
      * Analyzes skill compensation through Torre.ai API.
      * 
@@ -38,11 +57,11 @@ public class AnalysisService {
      * @return SkillCompensationResponse with compensation statistics
      * @throws Exception if the API call fails
      */
-    public SkillCompensationResponse analyzeSkillCompensation(String skill) throws Exception {
-        System.out.println("DEBUG: Getting skill compensation for: " + skill);
+    public SkillCompensationResponse analyzeSkillCompensation(String skill) {
+        logger.debug("Getting skill compensation for: {}", skill);
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            HttpPost httpPost = new HttpPost(TORRE_ANALYZE_API_URL);
+            HttpPost httpPost = new HttpPost(getAnalyzeApiUrl());
             
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setHeader("User-Agent", "Mozilla/5.0 (compatible; TorreAnalysisBot/1.0)");
@@ -50,22 +69,26 @@ public class AnalysisService {
             String jsonPayload = createCompensationAnalysisPayload(skill);
             httpPost.setEntity(new StringEntity(jsonPayload, ContentType.APPLICATION_JSON));
 
-            System.out.println("DEBUG: Request payload to Torre analysis: " + jsonPayload);
+            logger.debug("Request payload to Torre analysis: {}", jsonPayload);
 
             return httpClient.execute(httpPost, response -> {
-                System.out.println("DEBUG: Received analysis response status: " + response.getCode());
+                logger.debug("Received analysis response status: {}", response.getCode());
                 
                 if (response.getCode() != 200) {
-                    throw new RuntimeException("Torre.ai API returned status: " + response.getCode() + ". Unable to analyze skill compensation without Torre.ai data.");
+                    throw new ExternalServiceException("Torre.ai API returned status: " + response.getCode() + ". Unable to analyze skill compensation without Torre.ai data.");
                 }
 
                 try {
                     String responseBody = new String(response.getEntity().getContent().readAllBytes());
                     return parseCompensationResponse(responseBody, skill);
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to parse Torre.ai compensation response: " + e.getMessage(), e);
+                } catch (IOException e) {
+                    throw new ExternalServiceException("Failed to parse Torre.ai compensation response: " + e.getMessage(), e);
                 }
             });
+        } catch (ExternalServiceException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ExternalServiceException("Failed to analyze skill compensation: " + e.getMessage(), e);
         }
     }
 
@@ -78,46 +101,38 @@ public class AnalysisService {
      * @return SkillDistributionResponse with proficiency statistics
      * @throws Exception if the API call fails
      */
-    public SkillDistributionResponse getSkillProficiencyDistribution(String skill) throws Exception {
+    public SkillDistributionResponse getSkillProficiencyDistribution(String skill) {
         logger.info("Analyzing skill proficiency distribution for: {}", skill);
         
         SkillDistributionResponse response = new SkillDistributionResponse();
         response.setSkill(skill);
-                Map<String, Integer> proficiencyCount = new HashMap<>();
+        Map<String, Integer> proficiencyCount = new HashMap<>();
         proficiencyCount.put("beginner", 0);
         proficiencyCount.put("intermediate", 0);
         proficiencyCount.put("advanced", 0);
         proficiencyCount.put("expert", 0);
         
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            // DIVERSIFIED SEARCH STRATEGY - target different skill levels more specifically
-            System.out.println("DEBUG: Starting SKILL-SPECIFIC distribution analysis for: " + skill);
+            logger.debug("Starting skill-specific distribution analysis for: {}", skill);
             
-            // 1. General skill search (25 profiles) - offset 0
             performSkillSearch(httpClient, skill, proficiencyCount, 25, 0);
-            
-            // 2. Expert-level search (15 profiles) - target senior professionals
             performSkillSearch(httpClient, "senior " + skill + " expert", proficiencyCount, 15, 0);
-            
-            // 3. Developer/Engineer search (25 profiles) - offset 20 for variety
             performSkillSearch(httpClient, skill + " developer engineer", proficiencyCount, 25, 20);
-            
-            // 4. Entry-level search (15 profiles) - target beginners
             performSkillSearch(httpClient, "junior " + skill + " trainee", proficiencyCount, 15, 0);
-            
-            // 5. Professional/business search (20 profiles) - for soft skills
             performSkillSearch(httpClient, skill + " professional specialist", proficiencyCount, 20, 10);
+        } catch (IOException e) {
+            throw new ExternalServiceException("Failed to analyze skill proficiency distribution: " + e.getMessage(), e);
         }
         
-            // Calculate final totals and create distribution
         int totalProfiles = proficiencyCount.values().stream().mapToInt(Integer::intValue).sum();
         List<SkillDistributionResponse.ProficiencyLevel> distribution = new ArrayList<>();
         
-        System.out.println("DEBUG: ========== FINAL DISTRIBUTION ANALYSIS FOR: " + skill + " ==========");
-        System.out.println("DEBUG: Total profiles analyzed: " + totalProfiles);
+        logger.debug("Final distribution analysis for: {}", skill);
+        logger.debug("Total profiles analyzed: {}", totalProfiles);
         for (Map.Entry<String, Integer> entry : proficiencyCount.entrySet()) {
-            System.out.println("DEBUG: - " + entry.getKey() + ": " + entry.getValue() + " profiles");
-        }        if (totalProfiles > 0) {
+            logger.debug("- {}: {} profiles", entry.getKey(), entry.getValue());
+        }
+        if (totalProfiles > 0) {
             for (Map.Entry<String, Integer> entry : proficiencyCount.entrySet()) {
                 if (entry.getValue() > 0) {
                     int percentage = (entry.getValue() * 100) / totalProfiles;
@@ -127,7 +142,7 @@ public class AnalysisService {
                         entry.getValue(),
                         null // averageExperience
                     ));
-                    System.out.println("DEBUG: " + skill + " - " + entry.getKey() + ": " + entry.getValue() + " (" + percentage + "%)");
+                    logger.debug("{} - {}: {} ({}%)", skill, entry.getKey(), entry.getValue(), percentage);
                 }
             }
         }
@@ -145,9 +160,9 @@ public class AnalysisService {
      * Simplified search method for better performance
      */
     private void performSkillSearch(CloseableHttpClient httpClient, String searchTerm, 
-                                   Map<String, Integer> proficiencyCount, int limit, int offset) throws Exception {
+                                   Map<String, Integer> proficiencyCount, int limit, int offset) {
         try {
-            HttpPost httpPost = new HttpPost(TORRE_SEARCH_API_URL);
+            HttpPost httpPost = new HttpPost(getSearchApiUrl());
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setHeader("User-Agent", "Mozilla/5.0 (compatible; TorreAnalysisBot/1.0)");
             
@@ -168,7 +183,7 @@ public class AnalysisService {
             
             httpPost.setEntity(new StringEntity(jsonPayload, ContentType.APPLICATION_JSON));
             
-            System.out.println("DEBUG: Searching '" + searchTerm + "' with offset " + offset + " and limit " + limit);
+            logger.debug("Searching '{}' with offset {} and limit {}", searchTerm, offset, limit);
             
             String responseBody = httpClient.execute(httpPost, httpResponse -> {
                 if (httpResponse.getCode() == 200) {
@@ -190,25 +205,24 @@ public class AnalysisService {
                         
                         // Debug each profile analysis
                         String profileName = profile.path("name").asText("Unknown");
-                        String headline = profile.path("professionalHeadline").asText("No headline");
                         
                         if (proficiencyLevel != null) {
                             proficiencyCount.put(proficiencyLevel, proficiencyCount.get(proficiencyLevel) + 1);
                             profilesProcessed++;
-                            System.out.println("DEBUG: Profile '" + profileName + "' -> " + proficiencyLevel + " (headline: " + headline.substring(0, Math.min(50, headline.length())) + "...)");
+                            logger.debug("Profile '{}' -> {}", profileName, proficiencyLevel);
                         } else {
-                            System.out.println("DEBUG: Profile '" + profileName + "' -> SKIPPED (no proficiency determined)");
+                            logger.debug("Profile '{}' -> skipped", profileName);
                         }
                     }
                 }
                 
-                System.out.println("DEBUG: Search '" + searchTerm + "' -> " + profilesProcessed + " profiles");
+                logger.debug("Search '{}' -> {} profiles", searchTerm, profilesProcessed);
             }
             
-            Thread.sleep(200);
+            pause(200);
             
-        } catch (Exception e) {
-            System.out.println("DEBUG: Search failed for: " + searchTerm + " - " + e.getMessage());
+        } catch (IOException e) {
+            logger.warn("Search failed for '{}': {}", searchTerm, e.getMessage());
         }
     }
     
@@ -242,151 +256,144 @@ public class AnalysisService {
      * Analyzes a profile to determine proficiency level based on various factors.
      */
     private String analyzeProficiencyFromProfile(JsonNode profile, String skill) {
-        try {
-            String professionalHeadline = profile.path("professionalHeadline").asText("").toLowerCase();
-            double weight = profile.path("weight").asDouble(0.0);
-            double completion = profile.path("completion").asDouble(0.0);
-            
-            String skillLower = skill.toLowerCase();
-            int proficiencyScore = 0;
-            
-            // Basic skill mention
-            if (professionalHeadline.contains(skillLower)) {
-                proficiencyScore += 15;
-            }
-            
-            // Senior level indicators
-            if (professionalHeadline.contains("senior") || professionalHeadline.contains("lead")) {
-                proficiencyScore += 25;
-            }
-            
-            // Expert level indicators  
-            if (professionalHeadline.contains("architect") || professionalHeadline.contains("expert") || 
-                professionalHeadline.contains("principal") || professionalHeadline.contains("director")) {
-                proficiencyScore += 30;
-            }
-            
-            // Junior level indicators
-            if (professionalHeadline.contains("junior") || professionalHeadline.contains("trainee") || 
-                professionalHeadline.contains("intern") || professionalHeadline.contains("student")) {
-                proficiencyScore += 5;
-            }
-            
-            // Developer/Engineer indicators
-            if (professionalHeadline.contains("developer") || professionalHeadline.contains("engineer")) {
-                proficiencyScore += 10;
-            }
-            
-            // Profile quality bonus
-            if (completion > 0.7) proficiencyScore += 8;
-            if (weight > 1.0) proficiencyScore += 5;
-            
-            // Add randomness for more realistic distribution
-            proficiencyScore += (int)(Math.random() * 10);
-            
-            // Determine level based on score
-            if (proficiencyScore >= 40) {
-                return "expert";
-            } else if (proficiencyScore >= 25) {
-                return "advanced"; 
-            } else if (proficiencyScore >= 15) {
-                return "intermediate";
-            } else {
-                return "beginner";
-            }
-            
-        } catch (Exception e) {
-            // Random fallback for more realistic distribution
-            String[] levels = {"beginner", "intermediate", "advanced", "expert"};
-            return levels[(int)(Math.random() * levels.length)];
+        if (profile == null) {
+            return "beginner";
+        }
+
+        String professionalHeadline = profile.path("professionalHeadline").asText("").toLowerCase();
+        double weight = profile.path("weight").asDouble(0.0);
+        double completion = profile.path("completion").asDouble(0.0);
+        
+        String skillLower = skill.toLowerCase();
+        int proficiencyScore = 0;
+        
+        // Basic skill mention
+        if (professionalHeadline.contains(skillLower)) {
+            proficiencyScore += 15;
+        }
+        
+        // Senior level indicators
+        if (professionalHeadline.contains("senior") || professionalHeadline.contains("lead")) {
+            proficiencyScore += 25;
+        }
+        
+        // Expert level indicators  
+        if (professionalHeadline.contains("architect") || professionalHeadline.contains("expert") || 
+            professionalHeadline.contains("principal") || professionalHeadline.contains("director")) {
+            proficiencyScore += 30;
+        }
+        
+        // Junior level indicators
+        if (professionalHeadline.contains("junior") || professionalHeadline.contains("trainee") || 
+            professionalHeadline.contains("intern") || professionalHeadline.contains("student")) {
+            proficiencyScore += 5;
+        }
+        
+        // Developer/Engineer indicators
+        if (professionalHeadline.contains("developer") || professionalHeadline.contains("engineer")) {
+            proficiencyScore += 10;
+        }
+        
+        // Profile quality bonus
+        if (completion > 0.7) proficiencyScore += 8;
+        if (weight > 1.0) proficiencyScore += 5;
+        
+        // Add randomness for more realistic distribution
+        proficiencyScore += (int)(Math.random() * 10);
+        
+        // Determine level based on score
+        if (proficiencyScore >= 40) {
+            return "expert";
+        } else if (proficiencyScore >= 25) {
+            return "advanced"; 
+        } else if (proficiencyScore >= 15) {
+            return "intermediate";
+        } else {
+            return "beginner";
         }
     }
 
     /**
      * Creates the JSON payload for compensation analysis request.
      */
-    private String createCompensationAnalysisPayload(String skill) throws Exception {
-        // Use Torre.ai's official API structure for skill-specific analysis
-        return objectMapper.writeValueAsString(java.util.Map.of(
-            "query", java.util.Map.of(
-                "skill", java.util.Map.of(
-                    "term", skill,
-                    "experience", "unknown",
-                    "proficiency", "no-experience-interested"
-                )
-            ),
-            "analysis", java.util.Map.of(
-                "compensation", java.util.Map.of(
-                    "mean", true,
-                    "suggested", true,
-                    "min", true,
-                    "max", true,
-                    "deciles", false,
-                    "quartiles", false,
-                    "histogram", false
+    private String createCompensationAnalysisPayload(String skill) {
+        try {
+            return objectMapper.writeValueAsString(java.util.Map.of(
+                "query", java.util.Map.of(
+                    "skill", java.util.Map.of(
+                        "term", skill,
+                        "experience", "unknown",
+                        "proficiency", "no-experience-interested"
+                    )
                 ),
-                "weighted", true
-            )
-        ));
+                "analysis", java.util.Map.of(
+                    "compensation", java.util.Map.of(
+                        "mean", true,
+                        "suggested", true,
+                        "min", true,
+                        "max", true,
+                        "deciles", false,
+                        "quartiles", false,
+                        "histogram", false
+                    ),
+                    "weighted", true
+                )
+            ));
+        } catch (JsonProcessingException e) {
+            throw new ExternalServiceException("Failed to build compensation analysis payload: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Parses Torre.ai response for compensation data.
      * This method extracts real compensation data from Torre.ai's analysis response.
      */
-    private SkillCompensationResponse parseCompensationResponse(String responseBody, String skill) throws Exception {
-        JsonNode rootNode = objectMapper.readTree(responseBody);
-        System.out.println("DEBUG: Torre.ai response: " + responseBody);
-        
-        SkillCompensationResponse response = new SkillCompensationResponse();
-        response.setSkill(skill);
-        
-        // Parse Torre.ai compensation analysis response - actual structure
-        JsonNode resultNode = rootNode.path("result");
-        JsonNode compensationNode = resultNode.path("compensation");
-        
-        if (compensationNode.isObject()) {
-            // Torre.ai returns hourly rates, convert to yearly (assuming 40h/week * 50 weeks)
-            double hourlyToYearlyMultiplier = 40 * 50; // 2000 hours per year
-            
-            System.out.println("DEBUG: Raw Torre.ai compensation data:");
-            
-            if (compensationNode.has("mean")) {
-                double hourlyMean = compensationNode.path("mean").asDouble();
-                System.out.println("DEBUG: - mean (hourly): $" + hourlyMean + " -> yearly: $" + (hourlyMean * hourlyToYearlyMultiplier));
-                response.setAverageCompensation(hourlyMean * hourlyToYearlyMultiplier);
+    private SkillCompensationResponse parseCompensationResponse(String responseBody, String skill) {
+        try {
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            logger.debug("Torre.ai response received for skill: {}", skill);
+
+            SkillCompensationResponse response = new SkillCompensationResponse();
+            response.setSkill(skill);
+
+            JsonNode resultNode = rootNode.path("result");
+            JsonNode compensationNode = resultNode.path("compensation");
+
+            if (compensationNode.isObject()) {
+                double hourlyToYearlyMultiplier = 40 * 50;
+
+                if (compensationNode.has("mean")) {
+                    double hourlyMean = compensationNode.path("mean").asDouble();
+                    response.setAverageCompensation(hourlyMean * hourlyToYearlyMultiplier);
+                }
+                if (compensationNode.has("suggested")) {
+                    double hourlySuggested = compensationNode.path("suggested").asDouble();
+                    response.setMedianCompensation(hourlySuggested * hourlyToYearlyMultiplier);
+                }
+                if (compensationNode.has("min")) {
+                    double hourlyMin = compensationNode.path("min").asDouble();
+                    response.setMinCompensation(hourlyMin * hourlyToYearlyMultiplier);
+                }
+                if (compensationNode.has("max")) {
+                    double hourlyMax = compensationNode.path("max").asDouble();
+                    response.setMaxCompensation(hourlyMax * hourlyToYearlyMultiplier);
+                }
+
+                response.setCurrency("USD");
+                response.setPeriodicity("yearly");
+
+                if (compensationNode.has("total")) {
+                    response.setDataPoints(compensationNode.path("total").asInt(0));
+                }
             }
-            if (compensationNode.has("suggested")) {
-                double hourlySuggested = compensationNode.path("suggested").asDouble();
-                System.out.println("DEBUG: - suggested (hourly): $" + hourlySuggested + " -> yearly: $" + (hourlySuggested * hourlyToYearlyMultiplier));
-                response.setMedianCompensation(hourlySuggested * hourlyToYearlyMultiplier);
+
+            if (rootNode.has("total")) {
+                response.setDataPoints(rootNode.path("total").asInt(0));
             }
-            if (compensationNode.has("min")) {
-                double hourlyMin = compensationNode.path("min").asDouble();
-                System.out.println("DEBUG: - min (hourly): $" + hourlyMin + " -> yearly: $" + (hourlyMin * hourlyToYearlyMultiplier));
-                response.setMinCompensation(hourlyMin * hourlyToYearlyMultiplier);
-            }
-            if (compensationNode.has("max")) {
-                double hourlyMax = compensationNode.path("max").asDouble();
-                System.out.println("DEBUG: - max (hourly): $" + hourlyMax + " -> yearly: $" + (hourlyMax * hourlyToYearlyMultiplier));
-                response.setMaxCompensation(hourlyMax * hourlyToYearlyMultiplier);
-            }
-            
-            // Set currency and periodicity (Torre.ai returns hourly rates)
-            response.setCurrency("USD");
-            response.setPeriodicity("yearly");
-            
-            // Extract total profiles analyzed
-            if (compensationNode.has("total")) {
-                response.setDataPoints(compensationNode.path("total").asInt(0));
-            }
+
+            return response;
+        } catch (JsonProcessingException e) {
+            throw new ExternalServiceException("Failed to parse compensation response: " + e.getMessage(), e);
         }
-        
-        // Extract total count from root level
-        if (rootNode.has("total")) {
-            response.setDataPoints(rootNode.path("total").asInt(0));
-        }
-        
-        return response;
     }
 }
