@@ -135,7 +135,7 @@ public class AnalysisService {
         if (totalProfiles > 0) {
             for (Map.Entry<String, Integer> entry : proficiencyCount.entrySet()) {
                 if (entry.getValue() > 0) {
-                    int percentage = (entry.getValue() * 100) / totalProfiles;
+int percentage = (int) ((entry.getValue() * 100.0) / totalProfiles);
                     distribution.add(new SkillDistributionResponse.ProficiencyLevel(
                         entry.getKey(),
                         percentage,
