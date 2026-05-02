@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import ProfilePage from '@/app/profile/[username]/page'
 import * as api from '@/lib/api'
 

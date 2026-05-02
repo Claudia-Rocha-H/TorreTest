@@ -134,9 +134,10 @@ public class AnalysisService {
         }
         if (totalProfiles > 0) {
             for (Map.Entry<String, Integer> entry : proficiencyCount.entrySet()) {
-                if (entry.getValue() > 0) {
-int percentage = (int) ((entry.getValue() * 100.0) / totalProfiles);
-                    distribution.add(new SkillDistributionResponse.ProficiencyLevel(
+if (entry.getValue() > 0) {
+                double percentageDouble = (entry.getValue() * 100.0) / totalProfiles;
+                int percentage = (int) percentageDouble;
+                distribution.add(new SkillDistributionResponse.ProficiencyLevel(
                         entry.getKey(),
                         percentage,
                         entry.getValue(),
@@ -359,8 +360,8 @@ int percentage = (int) ((entry.getValue() * 100.0) / totalProfiles);
             JsonNode resultNode = rootNode.path("result");
             JsonNode compensationNode = resultNode.path("compensation");
 
-            if (compensationNode.isObject()) {
-                double hourlyToYearlyMultiplier = 40 * 50;
+if (compensationNode.isObject()) {
+                double hourlyToYearlyMultiplier = 40.0 * 50.0;
 
                 if (compensationNode.has("mean")) {
                     double hourlyMean = compensationNode.path("mean").asDouble();
