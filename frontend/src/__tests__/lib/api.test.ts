@@ -22,14 +22,14 @@ describe('API Service', () => {
         limit: 100,
       }
 
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(mockResponse),
       } as any)
 
       const result = await searchPeople('javascript developer', 100)
 
-      expect(global.fetch).toHaveBeenCalledWith(`${BASE_URL}/search/people`, {
+      expect(globalThis.fetch).toHaveBeenCalledWith(`${BASE_URL}/search/people`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'javascript developer', limit: 100 }),
@@ -40,7 +40,7 @@ describe('API Service', () => {
     it('should handle API errors', async () => {
       const mockErrorResponse = { message: 'Invalid query' }
 
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: false,
         json: jest.fn().mockResolvedValue(mockErrorResponse),
       } as any)
@@ -49,14 +49,14 @@ describe('API Service', () => {
     })
 
     it('should use default limit of 100', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({ results: [] }),
       } as any)
 
       await searchPeople('test')
 
-      expect(global.fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+      expect(globalThis.fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
         body: JSON.stringify({ query: 'test', limit: 100 }),
       }))
     })
@@ -70,14 +70,14 @@ describe('API Service', () => {
         email: 'test@example.com',
       }
 
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(mockResponse),
       } as any)
 
       const result = await getPersonDetails('test-user')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         `${BASE_URL}/profile/test-user`,
         expect.objectContaining({ method: 'GET' })
       )
@@ -85,7 +85,7 @@ describe('API Service', () => {
     })
 
     it('should handle 404 not found errors', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -97,14 +97,14 @@ describe('API Service', () => {
     })
 
     it('should encode username in URL', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({}),
       } as any)
 
       await getPersonDetails('user@domain.com')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining(encodeURIComponent('user@domain.com')),
         expect.any(Object)
       )
@@ -119,14 +119,14 @@ describe('API Service', () => {
         currency: 'USD',
       }
 
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(mockResponse),
       } as any)
 
       const result = await analyzeSkillCompensation('javascript')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining(`/analyze/skill-compensation?skill=javascript`),
         expect.any(Object)
       )
@@ -134,7 +134,7 @@ describe('API Service', () => {
     })
 
     it('should handle analysis errors', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 500,
       } as any)
@@ -145,14 +145,14 @@ describe('API Service', () => {
     })
 
     it('should encode skill name in URL', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({}),
       } as any)
 
       await analyzeSkillCompensation('c++')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining(encodeURIComponent('c++')),
         expect.any(Object)
       )
@@ -169,14 +169,14 @@ describe('API Service', () => {
         ],
       }
 
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(mockResponse),
       } as any)
 
       const result = await getSkillProficiencyDistribution('python')
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining(`/analyze/skill-distribution?skill=python`),
         expect.any(Object)
       )
@@ -184,7 +184,7 @@ describe('API Service', () => {
     })
 
     it('should handle distribution errors', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 503,
       } as any)

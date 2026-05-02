@@ -12,7 +12,10 @@ import java.util.regex.Pattern;
  * that need to be decoded for proper display in the frontend.
  */
 public class HtmlUtils {
-    
+
+    /** Private constructor to hide implicit public constructor */
+    private HtmlUtils() {}
+
     /** Pattern to match numeric HTML entities (&#nnnn; and &#xHHHH;) */
     private static final Pattern NUMERIC_ENTITY_PATTERN = Pattern.compile("&#(x?)([0-9a-fA-F]+);");
     

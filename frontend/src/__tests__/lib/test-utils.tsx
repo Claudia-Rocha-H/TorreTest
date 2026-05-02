@@ -75,7 +75,7 @@ export const mockApi = {
 
 // Setup mock fetch for success responses
 export const setupMockFetch = (response: unknown, ok = true) => {
-  global.fetch = jest.fn().mockResolvedValue({
+  globalThis.fetch = jest.fn().mockResolvedValue({
     ok,
     status: ok ? 200 : 500,
     json: jest.fn().mockResolvedValue(response),
@@ -84,7 +84,7 @@ export const setupMockFetch = (response: unknown, ok = true) => {
 
 // Setup mock fetch for error responses
 export const setupErrorFetch = (status: number) => {
-  global.fetch = jest.fn().mockResolvedValue({
+  globalThis.fetch = jest.fn().mockResolvedValue({
     ok: false,
     status,
     statusText: 'Error',
