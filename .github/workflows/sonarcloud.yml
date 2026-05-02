@@ -76,4 +76,3 @@ jobs:
             -Dsonar.java.coveragePlugin=jacoco
             -Dsonar.coverage.jacoco.xmlReportPaths=backend/target/site/jacoco/jacoco.xml
             -Dsonar.sources=backend/src/main/java
-            -Dsonar.cpd.exclude=**/*Response.java,**/*Request.java,**/PersonDetailsResponse.java
