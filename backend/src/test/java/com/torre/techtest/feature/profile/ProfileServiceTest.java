@@ -2,6 +2,7 @@ package com.torre.techtest.feature.profile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
@@ -139,6 +140,25 @@ class ProfileServiceTest {
 
         assertNotNull(response);
         assertEquals("Minimal", response.getPerson().getName());
+    }
+
+    @Test
+    void defaultBaseUrl() {
+        ProfileService service = new ProfileService();
+        assertEquals("https://torre.ai/api/genome/bios/", service.getProfileBaseUrl());
+    }
+
+    @Test
+    void nullPayload() {
+        wireMockServer.stubFor(get(urlEqualTo("/api/genome/bios/null-profile"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody("null")));
+
+        ProfileService service = new TestProfileService(wireMockServer.baseUrl());
+        PersonDetailsResponse response = service.getPersonDetails("null-profile");
+
+        assertNull(response);
     }
 
     private static final class TestProfileService extends ProfileService {

@@ -128,6 +128,42 @@ class SearchServiceTest {
         assertEquals("gg-1", response.getResults().get(0).getUsername());
     }
 
+    @Test
+    void defaultApiUrl() {
+        SearchService service = new SearchService();
+        assertEquals("https://torre.ai/api/entities/_searchStream", service.getSearchApiUrl());
+    }
+
+    @Test
+    void non200NoBody() {
+        wireMockServer.stubFor(post(urlEqualTo("/api/entities/_searchStream"))
+            .willReturn(aResponse()
+                .withStatus(502)));
+
+        SearchService service = new TestSearchService(wireMockServer.baseUrl());
+
+        ExternalServiceException exception = assertThrows(
+            ExternalServiceException.class,
+            () -> service.searchPeople(new SearchRequest("java", 30))
+        );
+
+        assertTrue(exception.getMessage().contains("Exception during people search"));
+    }
+
+    @Test
+    void ignoreNonPersonNode() {
+        wireMockServer.stubFor(post(urlEqualTo("/api/entities/_searchStream"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody("{\"name\":\"Only Name\"}\n{\"ggId\":\"gg-1\",\"name\":\"Ana Ruiz\"}\n")));
+
+        SearchService service = new TestSearchService(wireMockServer.baseUrl());
+        SearchResponse response = service.searchPeople(new SearchRequest("java", 30));
+
+        assertEquals(1, response.getResults().size());
+        assertEquals("Ana Ruiz", response.getResults().get(0).getName());
+    }
+
     private static final class TestSearchService extends SearchService {
         private final String baseUrl;
 
